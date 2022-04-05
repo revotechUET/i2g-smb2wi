@@ -1,5 +1,6 @@
 const ini = require('ini');
 const fs = require('fs');
+const { spawn } = require('child_process');
 module.exports = {smb2wi, wi2smb}
 
 function smb2wi(iniFile, sharePrefix) {
@@ -29,7 +30,22 @@ function smb2wi(iniFile, sharePrefix) {
   wiConfig.shares = shares;
   return wiConfig;
 }
+function forkChild(cmd) {
+  return new Promise(function(resolve, reject) {
+    const child = spawn('bash', ['-c', cmd]);
+    child.stdout.pipe(process.stdout);
+    child.stderr.pipe(process.stderr);
+    child.on("exit", function(code) {
+      console.log('code:' + code);
+      resolve(code === 0);
+    });
+  });
+}
 
+function reload_smbd() {
+  console.log('reload_smbd', arguments);
+  forkChild('systemctl restart smbd');
+}
 function wi2smb(outFile, wiConfig) {
   let stream = fs.createWriteStream(outFile);
   for (let share of wiConfig.generals) {
@@ -48,5 +64,5 @@ function wi2smb(outFile, wiConfig) {
     }
     stream.write(`  valid users = ${[share.data.owner, ...share.data.validUsers].join(',')}\r\n`);
   }
-  stream.end();
+  stream.end(reload_smbd);
 }
