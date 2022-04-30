@@ -1,11 +1,46 @@
 const {wi2smb} = require('../converters');
 const jwt = require('jsonwebtoken');
+const notify = require("../notification");
 module.exports = service;
 function buildPath(storageDBKey) {
   return `/i2g_data/minio_data/I2G_Storage_Bucket/BDPOC/${storageDBKey}`;
 }
 function buildShareName(workspaceName, owner, sharePrefix) {
   return `${sharePrefix}_${owner}_${workspaceName}`;
+}
+
+// ACCESSORS
+function getValidUsersOfShare(share) {
+  return share.data.validUsers;
+}
+function getNameOfShare(share) {
+  return share.data.name;
+}
+function getOwnerOfShare(share) {
+  return share.data.owner;
+}
+function diffInUsers(newUsers, oldUsers) {
+  let newUHash = {};
+  let oldUHash = {};
+  let addedUsers = [];
+  let removedUsers = [];
+  for (let u of newUsers) {
+    newUHash[u] = 1;
+  }
+  for (let u of oldUsers) {
+    oldUHash[u] = 1;
+  }
+  for (let u of newUsers) {
+    if (!oldUHash[u]) {
+      addedUsers.push(u);
+    }
+  }
+  for (let u of oldUsers) {
+    if (!newUHash[u]) {
+      removedUsers.push(u);
+    }
+  }
+  return {added: addedUsers, removed: removedUsers}
 }
 function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY) {
   const express = require('express');
@@ -52,7 +87,6 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY) {
     for (let sh of shares) {
       hashOfShares[sh.data.storageDBKey] = sh;
     }
-    console.log("HashOfShare:", hashOfShares);
     // Process shares
     for (let dbKey of storageDBKeys) {
       if (Object.keys(hashOfShares).includes(dbKey)) {
@@ -60,9 +94,15 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY) {
         let idx = wiConfig.shares.findIndex(sh => sh.data.storageDBKey === dbKey);
         if (idx >= 0) {
           console.log("Update share");
+          let newValidUsers = getValidUsersOfShare(hashOfShares[dbKey]);
+          let oldValidUsers = getValidUsersOfShare(wiConfig.shares[idx]);
+          let usersObj = diffInUsers(newValidUsers, oldValidUsers);
+          notify(usersObj.added, usersObj.removed, getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
           wiConfig.shares[idx] = hashOfShares[dbKey];
         }
         else {
+          console.log("New share");
+          notify(getValidUsersOfShare(hashOfShares[dbKey]), [], getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
           wiConfig.shares.push(hashOfShares[dbKey]);
         }
       }
@@ -70,57 +110,13 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY) {
         let idx = wiConfig.shares.findIndex(sh => sh.data.storageDBKey === dbKey);
         if (idx >= 0) {
           console.log("remove share");
+          notify([], getValidUsersOfShare(wiConfig.shares[idx]), getOwnerOfShare(wiConfig.shares[idx]), getNameOfShare(wiConfig.shares[idx]));
           wiConfig.shares.splice(idx, 1);
         }
       }
     }
     wi2smb(SMB_CONFIG, wiConfig);
     res.send({success: true, data: wiConfig.shares.filter(sh => storageDBKeys.includes(sh.data.storageDBKey))});
-  });
-  app.post('/share', authenticate, function(req, res) {
-    let { workspaceName, owner, storageDBKey, toUsers } = req.body;
-    let found = wiConfig.shares.find(sh => sh.data.storageDBKey === storageDBKey);
-    if (found) {
-      res.status(400).send({success: false, data: `Workspace ${workspaceName} is already shared`});
-      return;
-    }
-    wiConfig.shares.push({
-      comment: JSON.stringify({owner, storageDBKey}),
-      path: buildPath(storageDBKey),
-      'read only': 'no',
-      browsable: 'no',
-      'hide files': '/*__WI__/',
-      data: {
-        name: buildShareName(workspaceName, owner, SHARE_PREFIX),
-        owner: owner, 
-        storageDBKey: storageDBKey,
-        validUsers: toUsers
-      }
-    });
-    wi2smb(SMB_CONFIG, wiConfig);
-    res.send({success: true, data: {workspaceName, owner, storageDBKey}});
-  });
-  app.put('/share', authenticate, function(req, res) {
-    let { storageDBKey, toUsers } = req.body;
-    let found = wiConfig.shares.find(sh => sh.data.storageDBKey === storageDBKey);
-    if (!found) {
-      res.status(400).send({success: false, data: `Shared workspace not found`});
-      return;
-    }
-    found.data.validUsers = toUsers;
-    wi2smb(SMB_CONFIG, wiConfig);
-    res.send({success: true, data: {storageDBKey}});
-  });
-  app.delete('/share/:storageDBKey', authenticate, function(req, res) {
-    let storageDBKey = req.params.storageDBKey;
-    let foundIndex = wiConfig.shares.findIndex(sh => sh.data.storageDBKey === storageDBKey);
-    if (foundIndex < 0) {
-      res.status(400).send({success: false, data: `Shared workspace not found`});
-      return;
-    }
-    wiConfig.shares.splice(foundIndex, 1);
-    wi2smb(SMB_CONFIG, wiConfig);
-    res.send({success: true, data: {storageDBKey}});
   });
   app.listen(port, function() {
     console.log("service started at port " + port);
