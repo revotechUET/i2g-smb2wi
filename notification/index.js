@@ -57,29 +57,33 @@ const stoppedShareContentTemplate = `<center>
 `;
 
 function notify(addedRecipients, removedRecipients, owner, share) {
-  console.log("======"); 
+  console.log("======", this.usernamePrefix); 
   console.log(share);
   console.log("++++++");
   if (addedRecipients.length) {
-    notify4AddedToShare(addedRecipients, owner, share);
+    notify4AddedToShare(addedRecipients, owner, share, this.usernamePrefix);
   }
   if (removedRecipients.length) {
-    notify4RemovedFromShare(removedRecipients, owner, share);
+    notify4RemovedFromShare(removedRecipients, owner, share, this.usernamePrefix);
   }
 }
-function notify4RemovedFromShare(recipients, owner, share) {
+function notify4RemovedFromShare(recipients, owner, share, usernamePrefix) {
   console.log("SENDMAIL: REMOVED", recipients, share);
   let subject = Mustache.render(subjectTemplate, {owner, shareAction: "stopped sharing"});
   console.log(subject);
   let content = Mustache.render(stoppedShareContentTemplate, {owner, recipient: recipients, share});
   console.log(content);
-  // TODO: call wi-notification for notification delivery (email)
+  // TODO: call wi-notification for notification delivery (email). 
+  // i2gUsername = usernamePrefix + "_" + recipient
+  // email's recipient = find_email_of(i2gUsername)
 }
-function notify4AddedToShare(recipients, owner, share) {
+function notify4AddedToShare(recipients, owner, share, usernamePrefix) {
   console.log("SENDMAIL: ADDED", recipients, share);
   let subject = Mustache.render(subjectTemplate, {owner, shareAction: "shared"});
   console.log(subject);
   let content = Mustache.render(sharedContentTemplate, {owner, recipient: recipients, share});
   console.log(content);
   // TODO: call wi-notification for notification delivery (email)
+  // i2gUsername = usernamePrefix + "_" + recipient
+  // email's recipient = find_email_of(i2gUsername)
 }

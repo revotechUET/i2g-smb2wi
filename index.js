@@ -8,6 +8,7 @@ const opt = require('node-getopt').create([
   ['s', 'service', 'service mode'],
   ['o', 'output-file=ARG', 'output file'],
   ['p', 'share-prefix=ARG', 'share prefix'],
+  ['', "username-prefix=ARG", "username prefix"],
   ['P', 'port=ARG', 'service port'],
   ['k', 'jwt-key=ARG', 'jwt key'],
   ['h', 'help', 'display this help' ]
@@ -16,6 +17,7 @@ const opt = require('node-getopt').create([
 const inputFile = opt.options['input-file'] || 'smb.conf';
 const outputFile = opt.options['output-file'];
 const sharePrefix = opt.options['share-prefix'] || 'codb';
+const usernamePrefix = opt.options['username-prefix'] || 'bdpoc';
 const port = +(opt.options['port'] || 4000);
 const jwtKey = opt.options['jwt-key'] || 'wi-hash';
 console.log(opt.options);
@@ -29,7 +31,7 @@ else if (opt.options.wi2smb) {
 else if (opt.options.service) {
   console.log('Service mode');
   let wiConfig = smb2wi(inputFile, sharePrefix);
-  service(port, wiConfig, sharePrefix, inputFile, jwtKey);
+  service(port, wiConfig, sharePrefix, inputFile, jwtKey, usernamePrefix);
 }
 else {
   opt.showHelp();

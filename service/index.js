@@ -5,9 +5,9 @@ module.exports = service;
 function buildPath(storageDBKey) {
   return `/i2g_data/minio_data/I2G_Storage_Bucket/BDPOC/${storageDBKey}`;
 }
-function buildShareName(workspaceName, owner, sharePrefix) {
+/*function buildShareName(workspaceName, owner, sharePrefix) {
   return `${sharePrefix}_${owner}_${workspaceName}`;
-}
+}*/
 
 // ACCESSORS
 function getValidUsersOfShare(share) {
@@ -42,7 +42,8 @@ function diffInUsers(newUsers, oldUsers) {
   }
   return {added: addedUsers, removed: removedUsers}
 }
-function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY) {
+function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY, USERNAME_PREFIX) {
+  const notifyFn = notify.bind({usernamePrefix: USERNAME_PREFIX});
   const express = require('express');
   const app = express();
 
@@ -97,12 +98,12 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY) {
           let newValidUsers = getValidUsersOfShare(hashOfShares[dbKey]);
           let oldValidUsers = getValidUsersOfShare(wiConfig.shares[idx]);
           let usersObj = diffInUsers(newValidUsers, oldValidUsers);
-          notify(usersObj.added, usersObj.removed, getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
+          notifyFn(usersObj.added, usersObj.removed, getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
           wiConfig.shares[idx] = hashOfShares[dbKey];
         }
         else {
           console.log("New share");
-          notify(getValidUsersOfShare(hashOfShares[dbKey]), [], getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
+          notifyFn(getValidUsersOfShare(hashOfShares[dbKey]), [], getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
           wiConfig.shares.push(hashOfShares[dbKey]);
         }
       }
@@ -110,7 +111,7 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY) {
         let idx = wiConfig.shares.findIndex(sh => sh.data.storageDBKey === dbKey);
         if (idx >= 0) {
           console.log("remove share");
-          notify([], getValidUsersOfShare(wiConfig.shares[idx]), getOwnerOfShare(wiConfig.shares[idx]), getNameOfShare(wiConfig.shares[idx]));
+          notifyFn([], getValidUsersOfShare(wiConfig.shares[idx]), getOwnerOfShare(wiConfig.shares[idx]), getNameOfShare(wiConfig.shares[idx]));
           wiConfig.shares.splice(idx, 1);
         }
       }
