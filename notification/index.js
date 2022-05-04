@@ -85,8 +85,8 @@ async function notify4RemovedFromShare(token, recipients, owner, share, username
     let i2gUsername = usernamePrefix + "_" + recipient
     find_email_by_user(token, i2gUsername).then(email => {
       if (email) {
-        notice && receiver.email && receiver.email !== "" && notice.sendMail({
-          to: receiver.email,
+        notice && email && email !== "" && notice.sendMail({
+          to: email,
           messageHtml: content,
           subject: subject
         });
@@ -111,8 +111,8 @@ async function notify4AddedToShare(token, recipients, owner, share, usernamePref
     let i2gUsername = usernamePrefix + "_" + recipient
     find_email_by_user(token, i2gUsername).then(email => {
       if (email) {
-        notice && receiver.email && receiver.email !== "" && notice.sendMail({
-          to: receiver.email,
+        notice && email && email !== "" && notice.sendMail({
+          to: email,
           messageHtml: content,
           subject: subject
         });
