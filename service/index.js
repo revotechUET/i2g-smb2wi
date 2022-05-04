@@ -56,6 +56,7 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY, USERNAME_PREF
         console.error(err);
         return res.status(400).send('Invalid token');
       }
+      req.token = token
       next();
     });
   }
@@ -98,12 +99,12 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY, USERNAME_PREF
           let newValidUsers = getValidUsersOfShare(hashOfShares[dbKey]);
           let oldValidUsers = getValidUsersOfShare(wiConfig.shares[idx]);
           let usersObj = diffInUsers(newValidUsers, oldValidUsers);
-          notifyFn(usersObj.added, usersObj.removed, getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
+          notifyFn(req.token, usersObj.added, usersObj.removed, getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
           wiConfig.shares[idx] = hashOfShares[dbKey];
         }
         else {
           console.log("New share");
-          notifyFn(getValidUsersOfShare(hashOfShares[dbKey]), [], getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
+          notifyFn(req.token, getValidUsersOfShare(hashOfShares[dbKey]), [], getOwnerOfShare(hashOfShares[dbKey]), getNameOfShare(hashOfShares[dbKey]));
           wiConfig.shares.push(hashOfShares[dbKey]);
         }
       }
@@ -111,7 +112,7 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY, USERNAME_PREF
         let idx = wiConfig.shares.findIndex(sh => sh.data.storageDBKey === dbKey);
         if (idx >= 0) {
           console.log("remove share");
-          notifyFn([], getValidUsersOfShare(wiConfig.shares[idx]), getOwnerOfShare(wiConfig.shares[idx]), getNameOfShare(wiConfig.shares[idx]));
+          notifyFn(req.token, [], getValidUsersOfShare(wiConfig.shares[idx]), getOwnerOfShare(wiConfig.shares[idx]), getNameOfShare(wiConfig.shares[idx]));
           wiConfig.shares.splice(idx, 1);
         }
       }
