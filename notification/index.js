@@ -90,6 +90,8 @@ async function notify4RemovedFromShare(token, recipients, owner, share, username
           messageHtml: content,
           subject: subject
         });
+        console.log("sent removed mail to ", email)
+
       }
     })
   })
@@ -115,6 +117,7 @@ async function notify4AddedToShare(token, recipients, owner, share, usernamePref
           subject: subject
         });
       }
+      console.log("sent add mail to ", email)
     })
   })
   // email's recipient = find_email_of(i2gUsername)
