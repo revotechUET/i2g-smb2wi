@@ -1,6 +1,14 @@
 const Mustache = require('mustache');
+const find_email_by_user = require('../utils/get-user-email');
+const wiNotification = require('@revotechuet/wi-notification');
+let notice;
+if (process.env.AWS_SMTP_USER) {
+  notice = new wiNotification({
+    user: process.env.AWS_SMTP_USER,
+    password: process.env.AWS_SMTP_PASSWORD
+  });
+}
 
-module.exports = notify;
 
 
 const subjectTemplate = "{{owner}} {{shareAction}} workspace {{share}} with you";
@@ -56,34 +64,60 @@ const stoppedShareContentTemplate = `<center>
 </center>
 `;
 
-function notify(addedRecipients, removedRecipients, owner, share) {
-  console.log("======", this.usernamePrefix); 
+function notify(token, addedRecipients, removedRecipients, owner, share) {
+  console.log("======", this.usernamePrefix, token);
   console.log(share);
   console.log("++++++");
   if (addedRecipients.length) {
-    notify4AddedToShare(addedRecipients, owner, share, this.usernamePrefix);
+    notify4AddedToShare(token, addedRecipients, owner, share, this.usernamePrefix);
   }
   if (removedRecipients.length) {
-    notify4RemovedFromShare(removedRecipients, owner, share, this.usernamePrefix);
+    notify4RemovedFromShare(token, removedRecipients, owner, share, this.usernamePrefix);
   }
 }
-function notify4RemovedFromShare(recipients, owner, share, usernamePrefix) {
+async function notify4RemovedFromShare(token, recipients, owner, share, usernamePrefix) {
   console.log("SENDMAIL: REMOVED", recipients, share);
-  let subject = Mustache.render(subjectTemplate, {owner, shareAction: "stopped sharing"});
-  console.log(subject);
-  let content = Mustache.render(stoppedShareContentTemplate, {owner, recipient: recipients, share});
-  console.log(content);
+  let subject = Mustache.render(subjectTemplate, { owner, shareAction: "stopped sharing" });
+  // console.log(subject);
+  let content = Mustache.render(stoppedShareContentTemplate, { owner, recipient: recipients, share });
+  // console.log(content);
+  recipients.forEach(async recipient => {
+    let i2gUsername = usernamePrefix + "_" + recipient
+    find_email_by_user(token, i2gUsername).then(email => {
+      if (email) {
+        notice && receiver.email && receiver.email !== "" && notice.sendMail({
+          to: receiver.email,
+          messageHtml: content,
+          subject: subject
+        });
+      }
+    })
+  })
+
   // TODO: call wi-notification for notification delivery (email). 
-  // i2gUsername = usernamePrefix + "_" + recipient
   // email's recipient = find_email_of(i2gUsername)
 }
-function notify4AddedToShare(recipients, owner, share, usernamePrefix) {
+async function notify4AddedToShare(token, recipients, owner, share, usernamePrefix) {
   console.log("SENDMAIL: ADDED", recipients, share);
-  let subject = Mustache.render(subjectTemplate, {owner, shareAction: "shared"});
-  console.log(subject);
-  let content = Mustache.render(sharedContentTemplate, {owner, recipient: recipients, share});
-  console.log(content);
+  let subject = Mustache.render(subjectTemplate, { owner, shareAction: "shared" });
+  // console.log(subject);
+  let content = Mustache.render(sharedContentTemplate, { owner, recipient: recipients, share });
+  // console.log(content);
+
   // TODO: call wi-notification for notification delivery (email)
-  // i2gUsername = usernamePrefix + "_" + recipient
+  recipients.forEach(async recipient => {
+    let i2gUsername = usernamePrefix + "_" + recipient
+    find_email_by_user(token, i2gUsername).then(email => {
+      if (email) {
+        notice && receiver.email && receiver.email !== "" && notice.sendMail({
+          to: receiver.email,
+          messageHtml: content,
+          subject: subject
+        });
+      }
+    })
+  })
   // email's recipient = find_email_of(i2gUsername)
 }
+
+module.exports = notify;

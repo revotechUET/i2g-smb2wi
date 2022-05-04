@@ -1,3 +1,4 @@
+require('dotenv').config()
 const fs = require('fs');
 const {smb2wi, wi2smb} = require('./converters');
 const service = require('./service');
