@@ -44,7 +44,7 @@ function forkChild(cmd) {
 
 function reload_smbd() {
   console.log('reload_smbd', arguments);
-  //forkChild('systemctl restart smbd');
+  forkChild('systemctl restart smbd');
 }
 function wi2smb(outFile, wiConfig) {
   let stream = fs.createWriteStream(outFile);
