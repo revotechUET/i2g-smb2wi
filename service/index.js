@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const notify = require("../notification");
 module.exports = service;
 function buildPath(storageDBKey) {
-  return `/i2g_data/minio_data/I2G_Storage_Bucket/BDPOC/${storageDBKey}`;
+  return `/i2g-data-working/I2G_Storage_Bucket/PVEP_Block_0102/${storageDBKey}`;
 }
 /*function buildShareName(workspaceName, owner, sharePrefix) {
   return `${sharePrefix}_${owner}_${workspaceName}`;
@@ -71,7 +71,7 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY, USERNAME_PREF
     console.log('received');
     res.send('wi-smb service running');
   });
-  app.post('/query-shares', authenticate, function(req, res) {
+  app.post('/api/query-shares', authenticate, function(req, res) {
     let storageDBKeys = req.body;
     console.log(storageDBKeys);
     try {
@@ -82,7 +82,7 @@ function service(port, wiConfig, SHARE_PREFIX, SMB_CONFIG, JWTKEY, USERNAME_PREF
       res.status(400).send(e.message);
     }
   });
-  app.post('/load-shares', authenticate, function(req, res) {
+  app.post('/api/load-shares', authenticate, function(req, res) {
     let {shares, storageDBKeys} = req.body;
     // console.log(shares, storageDBKeys);
     let hashOfShares = {};

@@ -42,7 +42,7 @@ const sharedContentTemplate = `<center>
         </center>
         <p>Hi <b>{{recipient}}</b>,</p>
         <p><b>{{owner}}</b> shared Workspace <b>{{share}}</b> with you. Now you can work on the Workspace</p>
-        <p>You can access the shared workspace on your local machine by open the shared folder at "\\\\hcm-dtpappserv.biendongpoc.vn\\{{share}}"</p>
+        <p>You can access the shared workspace on your local machine by open the shared folder at "\\\\10.68.5.210\\{{share}}"</p>
         <p>Sincerely,</p>
       </div>
       ${footer}

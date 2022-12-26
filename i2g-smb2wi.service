@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 User=root
-WorkingDirectory=/home/bdadmin/Desktop/I2G/i2g-smb2wi
-ExecStart=/usr/bin/node /home/bdadmin/Desktop/I2G/i2g-smb2wi/index.js -s -i /etc/samba/smb.conf -p codb -P 4000 -k secretKey
+WorkingDirectory=/home/i2g/i2g-smb2wi
+ExecStart=/usr/bin/node /home/i2g/i2g-smb2wi/index.js -s -i /etc/samba/smb.conf -p codb -P 4000 -k secretKey --username-prefix=pvep
 Restart=Always
 
 [Install]
